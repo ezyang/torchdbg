@@ -1,0 +1,17 @@
+- how to get at source code problem
+  - simplifying assumption: run the server colocated with the actual files
+  - more portable: package the source code with the visualization (kind of
+    blegh, in general this would take up a lot of space in the trace).
+    Note: just PyTorch source checkout is 1G of files!
+    - could try to only selectively package files that are needed
+  - client-server architecture
+
+- trace granularity problem
+  - sys.settrace
+  - torch function mode
+  - torch dispatch mode
+    - these seem most practical: debugger glosses over details on user code
+      and just jumps you from line to line that has an actual operator call
+    - looking for a specific stack frame also minimizes the source code to
+      ship
+
