@@ -19,9 +19,13 @@ import os
 import types
 
 
+# import torchvision.ops
+
+
 uninteresting_dirs = (
     os.path.dirname(__file__),
     os.path.dirname(inspect.getfile(torch)),
+    # os.path.dirname(inspect.getfile(torchvision.ops)),
 )
 
 
@@ -120,13 +124,7 @@ class LoggingMode(TorchDispatchMode):
             # transformations are in principle all known to us and reversible.)
             user_args, user_kwargs = args, kwargs
         else:
-            # f_locals is all kwargs, we try to stuff as many positionally as
-            # possible, because the user might not even know what a function
-            # had named the positional args.
-            user_args, user_kwargs = translate_args(
-                inner_frame.f_locals,
-                types.FunctionType(inner_frame.f_code, inner_frame.f_globals)
-            )
+            user_args, user_kwargs = [], inner_frame.f_locals
         rs = func(*args, **kwargs)
         dump_source(frame.f_code.co_filename)
         trace_structured("eager_dispatch", metadata_fn=lambda: {
