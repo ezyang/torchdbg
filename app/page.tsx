@@ -19,7 +19,7 @@ class Trace {
 
 export default function Home() {
   const [file, setFile] = useState(() => {
-    const saved = localStorage.getItem("fileCache");
+    const saved = typeof window !== 'undefined' ? localStorage.getItem("fileCache") : null;
     return saved || null;
   });
   const [index, setIndex] = useState(0);
@@ -87,10 +87,11 @@ export default function Home() {
   const source = entry ? trace.sourcemap[entry.user_filename] : "";
 
   const monaco = useMonaco();
+  const editor = monaco ? monaco.editor.getEditors()[0] : null;
 
   useEffect(() => {
-    if (monaco && entry) {
-      monaco.editor.getEditors()[0].revealLineInCenter(entry.user_line);  // zero or one indexed?
+    if (editor && entry) {
+      editor.revealLineInCenter(entry.user_line);  // zero or one indexed?
     }
   }, [monaco]);
 
