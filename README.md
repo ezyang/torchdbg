@@ -53,3 +53,5 @@ bun dev
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 Upload one of the generated trace files to the UI.
+
+Use the slider at the bottom to advance forward/back in the trace.
