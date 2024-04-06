@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import dynamic from 'next/dynamic';
+import { useRef, useState, useEffect, useMemo } from 'react';
 import { Editor, useMonaco } from '@monaco-editor/react';
 
 const re_glog = /(?<level>[VIWEC])(?<month>\d{2})(?<day>\d{2}) (?<hour>\d{2}):(?<minute>\d{2}):(?<second>\d{2}).(?<millisecond>\d{6}) (?<thread>\d+)(?<pathname>[^:]+):(?<line>\d+)\] (?<payload>.)/;
@@ -17,7 +18,7 @@ class Trace {
   }
 }
 
-export default function Home() {
+function Home() {
   const [file, setFile] = useState(() => {
     const saved = typeof window !== 'undefined' ? localStorage.getItem("fileCache") : null;
     return saved || null;
@@ -60,12 +61,12 @@ export default function Home() {
       if ("has_payload" in metadata) {
         let first = true;
         for (; i + 1 < lines.length && lines[i + 1].startsWith('\t'); i++) {
-          const payload_line = lines[i];
+          const payload_line = lines[i + 1];
           if (!first) {
             payload += "\n";
           }
           first = false;
-          payload += lines[i].slice(1);
+          payload += payload_line.slice(1);
         }
         // TODO: test MD5 sum
       }
@@ -86,14 +87,23 @@ export default function Home() {
 
   const source = entry ? trace.sourcemap[entry.user_filename] : "";
 
-  const monaco = useMonaco();
-  const editor = monaco ? monaco.editor.getEditors()[0] : null;
+  const [editor, setEditor] = useState(null);
+  const [highlight, setHighlight] = useState(null);
+
+  const handleEditorDidMount = (editor, monaco) => {
+    setEditor(editor);
+    setHighlight(editor.createDecorationsCollection());
+  };
 
   useEffect(() => {
-    if (editor && entry) {
+    if (editor && entry && highlight) {
       editor.revealLineInCenter(entry.user_line);  // zero or one indexed?
+      highlight.set([{
+        range: new monaco.Range(entry.user_line, 1, entry.user_line, 1),
+        options: {isWholeLine: true, className: "highlight"}}
+      ]);
     }
-  }, [monaco]);
+  }, [editor, highlight, entry]);
 
   return (
     <div>
@@ -103,6 +113,7 @@ export default function Home() {
           height="600px"
           defaultLanguage="javascript"
           value={source}
+          onMount={handleEditorDidMount}
           options={{
             readOnly: true,
             minimap: { enabled: false },
@@ -119,3 +130,5 @@ export default function Home() {
     </div>
   );
 }
+
+export default dynamic(() => Promise.resolve(Home), {ssr: false})
