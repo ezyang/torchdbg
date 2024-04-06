@@ -38,7 +38,11 @@ multiple trace files will be generated per rank.
 
 ### React UI
 
-First, run the development server:
+A live version of the UI is here: https://ezyang.github.io/torchdbg/
+It is entirely client side, the trace files never leave your browser.
+Use the slider at the bottom to advance forward/back in the trace.
+
+To run it locally, first, run the development server:
 
 ```bash
 npm run dev
@@ -53,5 +57,3 @@ bun dev
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 Upload one of the generated trace files to the UI.
-
-Use the slider at the bottom to advance forward/back in the trace.

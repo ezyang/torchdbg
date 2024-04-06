@@ -5,6 +5,9 @@ import { useRef, useState, useEffect, useMemo } from 'react';
 import { Editor, useMonaco } from '@monaco-editor/react';
 import * as monacoEditor from 'monaco-editor/esm/vs/editor/editor.api';
 
+// TODO: make this lazy
+import sample from '../example/test.log';
+
 const re_glog = /(?<level>[VIWEC])(?<month>\d{2})(?<day>\d{2}) (?<hour>\d{2}):(?<minute>\d{2}):(?<second>\d{2}).(?<millisecond>\d{6}) (?<thread>\d+)(?<pathname>[^:]+):(?<line>\d+)\] (?<payload>.)/;
 
 interface IEntry {
@@ -41,6 +44,8 @@ export default function Home() {
     const saved = localStorage.getItem("fileCache");
     if (saved) {
       setFile(saved);
+    } else {
+      setFile(sample);
     }
     initRef.current = true;
   });
