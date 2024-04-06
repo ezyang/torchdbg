@@ -59,7 +59,7 @@ export default function Home() {
   };
 
   useEffect(() => {
-    if (file !== null) {
+    if (file !== null && file.length < 20000) {
       localStorage.setItem("fileCache", file);
     }
   }, [file]);
@@ -136,6 +136,7 @@ export default function Home() {
   return (
     <div>
       <input type="file" onChange={handleFileChange} />
+      <div>{entry && trace.strtable[entry.user_filename]}</div>
       {file && (
         <Editor
           height="500px"
