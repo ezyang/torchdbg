@@ -31,7 +31,7 @@ class Trace {
 }
 
 function Home() {
-  const [file, setFile] = useState(null);
+  const [file, setFile] = useState<string | null>(null);
   const [index, setIndex] = useState(0);
 
   const initRef = useRef(false);
