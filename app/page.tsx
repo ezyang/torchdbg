@@ -3,11 +3,23 @@
 import dynamic from 'next/dynamic';
 import { useRef, useState, useEffect, useMemo } from 'react';
 import { Editor, useMonaco } from '@monaco-editor/react';
+import * as monacoEditor from 'monaco-editor/esm/vs/editor/editor.api';
 
 const re_glog = /(?<level>[VIWEC])(?<month>\d{2})(?<day>\d{2}) (?<hour>\d{2}):(?<minute>\d{2}):(?<second>\d{2}).(?<millisecond>\d{6}) (?<thread>\d+)(?<pathname>[^:]+):(?<line>\d+)\] (?<payload>.)/;
 
+interface IEntry {
+  func: string,
+  user_filename: number,
+  user_line: number,
+  args: object,
+  kwargs: object,
+  ret: object,
+  user_args: object,
+  user_kwargs: object,
+}
+
 class Trace {
-  public entries: object[]
+  public entries: IEntry[]
   public sourcemap: { [filename: string]: string }
   public strtable: { [id: number]: string }
 
@@ -19,15 +31,26 @@ class Trace {
 }
 
 function Home() {
-  const [file, setFile] = useState(() => {
-    const saved = typeof window !== 'undefined' ? localStorage.getItem("fileCache") : null;
-    return saved || null;
-  });
+  const [file, setFile] = useState(null);
   const [index, setIndex] = useState(0);
 
-  const handleFileChange = async (e) => {
-    const text = await e.target.files[0].text();
-    setFile(text);
+  const initRef = useRef(false);
+
+  useEffect(() => {
+    if (initRef.current) return;
+    const saved = localStorage.getItem("fileCache");
+    if (saved) {
+      setFile(saved);
+    }
+    initRef.current = true;
+  });
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const text = await file.text();
+      setFile(text);
+    }
   };
 
   useEffect(() => {
@@ -36,7 +59,7 @@ function Home() {
     }
   }, [file]);
 
-  const handleSliderChange = (event) => {
+  const handleSliderChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setIndex(Number(event.target.value));
   };
 
@@ -83,14 +106,14 @@ function Home() {
     return trace;
   }, [file]);
 
-  const entry = trace !== null && index < trace.entries.length ? trace.entries[index] : null;
+  const entry = trace && index < trace.entries.length ? trace.entries[index] : null;
 
-  const source = entry ? trace.sourcemap[entry.user_filename] : "";
+  const source = entry && trace ? trace.sourcemap[entry.user_filename] : "";
 
-  const [editor, setEditor] = useState(null);
-  const [highlight, setHighlight] = useState(null);
+  const [editor, setEditor] = useState<monacoEditor.editor.IStandaloneCodeEditor | null>(null);
+  const [highlight, setHighlight] = useState<monacoEditor.editor.IEditorDecorationsCollection | null>(null);
 
-  const handleEditorDidMount = (editor, monaco) => {
+  const handleEditorDidMount = (editor: monacoEditor.editor.IStandaloneCodeEditor, monaco: typeof monacoEditor) => {
     setEditor(editor);
     setHighlight(editor.createDecorationsCollection());
   };
@@ -99,7 +122,7 @@ function Home() {
     if (editor && entry && highlight) {
       editor.revealLineInCenter(entry.user_line);  // zero or one indexed?
       highlight.set([{
-        range: new monaco.Range(entry.user_line, 1, entry.user_line, 1),
+        range: new monacoEditor.Range(entry.user_line, 1, entry.user_line, 1),
         options: {isWholeLine: true, className: "highlight"}}
       ]);
     }
@@ -128,12 +151,12 @@ function Home() {
         onChange={handleSliderChange}
       />
       <ul>
-        <li>func: {JSON.stringify(entry.func)}</li>
-        <li>args: {JSON.stringify(entry.args)}</li>
-        <li>kwargs: {JSON.stringify(entry.kwargs)}</li>
-        <li>ret: {JSON.stringify(entry.ret)}</li>
-        <li>user_args: {JSON.stringify(entry.user_args)}</li>
-        <li>user_kwargs: {JSON.stringify(entry.user_kwargs)}</li>
+        <li>func: {JSON.stringify(entry?.func)}</li>
+        <li>args: {JSON.stringify(entry?.args)}</li>
+        <li>kwargs: {JSON.stringify(entry?.kwargs)}</li>
+        <li>ret: {JSON.stringify(entry?.ret)}</li>
+        <li>user_args: {JSON.stringify(entry?.user_args)}</li>
+        <li>user_kwargs: {JSON.stringify(entry?.user_kwargs)}</li>
       </ul>
     </div>
   );
