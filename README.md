@@ -1,6 +1,23 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# torchdbg
 
-## Getting Started
+torchdbg is two things:
+
+* A tracer that dumps all PyTorch operations that occur in your program to a
+  structured log (formatted compatibly with
+  [tlparse](https://github.com/ezyang/tlparse))
+
+* A React UI for visualizing the traces produced above, in the same style
+  as a single-stepping debugger.
+
+![image](https://github.com/ezyang/torchdbg/assets/13564/912dff04-fb5d-4ea8-a99c-42e73bb4222f)
+
+This is an Easter vacation hack from @ezyang, I don't currently have plans to
+keep pushing this further but maybe the community is willing to pick this up
+and run with it.
+
+## How to use
+
+
 
 First, run the development server:
 

@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "torchdbg"
+version = "0.1.0"
+description = "PyTorch centric eager mode debugger/tracer"
+authors = ["Edward Z. Yang <ezyang@meta.com>"]
+license = "BSD-3"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
