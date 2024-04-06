@@ -9,7 +9,7 @@ const re_glog = /(?<level>[VIWEC])(?<month>\d{2})(?<day>\d{2}) (?<hour>\d{2}):(?
 class Trace {
   public entries: object[]
   public sourcemap: { [filename: string]: string }
-  public strtable: { [id: int]: string }
+  public strtable: { [id: number]: string }
 
   constructor() {
     this.entries = [];
