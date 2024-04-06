@@ -15,3 +15,6 @@
     - looking for a specific stack frame also minimizes the source code to
       ship
 
+
+- priority: multiple stack levels seems really helpful (next vs step)
+
