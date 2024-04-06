@@ -105,7 +105,14 @@ export default function Home() {
         trace.sourcemap[metadata.dump_source.filename] = payload;
       }
       if ("eager_dispatch" in metadata) {
-        trace.entries.push(metadata["eager_dispatch"]);
+        const entry = metadata["eager_dispatch"];
+        const prev_entry = trace.entries.length ? trace.entries.at(-1) : null;
+        // TODO: it seems more intuitive to fold these steps together, but
+        // that means we're eliding some function information.  Probably want
+        // to just clump them together in the display below
+        if (!prev_entry || !(prev_entry.user_filename === entry.user_filename && prev_entry.user_line === entry.user_line)) {
+          trace.entries.push(entry);
+        }
       }
     }
     return trace;
@@ -136,7 +143,7 @@ export default function Home() {
   return (
     <div>
       <input type="file" onChange={handleFileChange} />
-      <div>{entry && trace.strtable[entry.user_filename]}</div>
+      <div>{entry && trace && trace.strtable[entry.user_filename]}</div>
       {file && (
         <Editor
           height="500px"
