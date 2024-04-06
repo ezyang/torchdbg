@@ -110,7 +110,7 @@ function Home() {
       <input type="file" onChange={handleFileChange} />
       {file && (
         <Editor
-          height="600px"
+          height="500px"
           defaultLanguage="javascript"
           value={source}
           onMount={handleEditorDidMount}
@@ -127,6 +127,14 @@ function Home() {
         value={index}
         onChange={handleSliderChange}
       />
+      <ul>
+        <li>func: {JSON.stringify(entry.func)}</li>
+        <li>args: {JSON.stringify(entry.args)}</li>
+        <li>kwargs: {JSON.stringify(entry.kwargs)}</li>
+        <li>ret: {JSON.stringify(entry.ret)}</li>
+        <li>user_args: {JSON.stringify(entry.user_args)}</li>
+        <li>user_kwargs: {JSON.stringify(entry.user_kwargs)}</li>
+      </ul>
     </div>
   );
 }

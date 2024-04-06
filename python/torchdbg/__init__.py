@@ -130,6 +130,7 @@ class LoggingMode(TorchDispatchMode):
         rs = func(*args, **kwargs)
         dump_source(frame.f_code.co_filename)
         trace_structured("eager_dispatch", metadata_fn=lambda: {
+            "func": str(func),
             "args": self._json(args),
             "kwargs": self._json(kwargs),
             "user_args": self._json(user_args),

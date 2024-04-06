@@ -2,4 +2,7 @@ import torchdbg
 import torch
 
 with torchdbg.LoggingMode():
-    torch.nn.functional.dropout(torch.randn(3), 0.5)
+    x = torch.randn(3)
+    x = torch.nn.functional.dropout(x, 0.5)
+    x = torch.nn.functional.dropout(x, 0.5)
+    x = torch.nn.functional.dropout(x, 0.5)
