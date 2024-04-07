@@ -1,6 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useRef, useState, useEffect, useMemo } from 'react';
 import { Editor, useMonaco } from '@monaco-editor/react';
 import * as monacoEditor from 'monaco-editor/esm/vs/editor/editor.api';
@@ -34,21 +35,39 @@ class Trace {
 }
 
 export default function Home() {
-  const [file, setFile] = useState<string | null>(null);
-  const [index, setIndex] = useState(0);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const example = searchParams.get('example') || '';
 
-  const initRef = useRef(false);
+  const [file, setFile] = useState<string>(sample);
+  const [index, setIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSelectChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    // TODO: handle race condition
+    const selectedOption = e.target.value;
+    const newSearchParams = new URLSearchParams(searchParams);
+    if (selectedOption) {
+      newSearchParams.set('example', selectedOption);
+    } else {
+      newSearchParams.delete('example');
+    }
+    router.push(`${pathname}?${newSearchParams.toString()}`);
+
+    if (!selectedOption) {
+      return;
+    }
+    setIsLoading(true);
+    const response = await fetch("http://ezyang.com/public/" + e.target.value + ".log", {cache: 'force-cache'})
+    const result = await response.text();
+    setIsLoading(false);
+    setFile(result);
+  };
 
   useEffect(() => {
-    if (initRef.current) return;
-    const saved = localStorage.getItem("fileCache");
-    if (saved) {
-      setFile(saved);
-    } else {
-      setFile(sample);
-    }
-    initRef.current = true;
-  });
+    handleSelectChange({ target: {value: example} } as React.ChangeEvent<HTMLSelectElement>);
+  }, []);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -57,12 +76,6 @@ export default function Home() {
       setFile(text);
     }
   };
-
-  useEffect(() => {
-    if (file !== null && file.length < 20000) {
-      localStorage.setItem("fileCache", file);
-    }
-  }, [file]);
 
   const handleSliderChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setIndex(Number(event.target.value));
@@ -143,6 +156,13 @@ export default function Home() {
   return (
     <div>
       <input type="file" onChange={handleFileChange} />
+      or pick an example:
+      <select value={example || ''} onChange={handleSelectChange}>
+        <option value=""></option>
+        <option value="maskrcnn">maskrcnn</option>
+        <option value="half">half</option>
+      </select>&nbsp;
+      {isLoading && <span className="loader"></span>}
       <div>{entry && trace && trace.strtable[entry.user_filename]}</div>
       {file && (
         <Editor
