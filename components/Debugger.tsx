@@ -11,15 +11,19 @@ import sample from '../example/test.log';
 
 const re_glog = /(?<level>[VIWEC])(?<month>\d{2})(?<day>\d{2}) (?<hour>\d{2}):(?<minute>\d{2}):(?<second>\d{2}).(?<millisecond>\d{6}) (?<thread>\d+)(?<pathname>[^:]+):(?<line>\d+)\] (?<payload>.)/;
 
+interface IFrame {
+  name: string,
+  line: number,
+  filename: number,
+  locals: object,
+}
+
 interface IEntry {
-  func: string,
-  user_filename: number,
-  user_line: number,
+  target: string,
+  stack: IFrame[],
   args: object,
   kwargs: object,
   ret: object,
-  user_args: object,
-  user_kwargs: object,
 }
 
 class Trace {
@@ -118,22 +122,16 @@ export default function Home() {
         trace.sourcemap[metadata.dump_source.filename] = payload;
       }
       if ("eager_dispatch" in metadata) {
-        const entry = metadata["eager_dispatch"];
-        const prev_entry = trace.entries.length ? trace.entries.at(-1) : null;
-        // TODO: it seems more intuitive to fold these steps together, but
-        // that means we're eliding some function information.  Probably want
-        // to just clump them together in the display below
-        if (!prev_entry || !(prev_entry.user_filename === entry.user_filename && prev_entry.user_line === entry.user_line)) {
-          trace.entries.push(entry);
-        }
+        trace.entries.push(metadata["eager_dispatch"]);
       }
     }
     return trace;
   }, [file]);
 
   const entry = trace && index < trace.entries.length ? trace.entries[index] : null;
+  const frame = entry && entry.stack ? entry.stack[0] : null;
 
-  const source = entry && trace ? trace.sourcemap[entry.user_filename] : "";
+  const source = trace && frame ? trace.sourcemap[frame.filename] : "";
 
   const [editor, setEditor] = useState<monacoEditor.editor.IStandaloneCodeEditor | null>(null);
   const [highlight, setHighlight] = useState<monacoEditor.editor.IEditorDecorationsCollection | null>(null);
@@ -144,14 +142,14 @@ export default function Home() {
   };
 
   useEffect(() => {
-    if (editor && entry && highlight) {
-      editor.revealLineInCenter(entry.user_line);  // zero or one indexed?
+    if (editor && frame && highlight) {
+      editor.revealLineInCenter(frame.line);  // zero or one indexed?
       highlight.set([{
-        range: new monacoEditor.Range(entry.user_line, 1, entry.user_line, 1),
+        range: new monacoEditor.Range(frame.line, 1, frame.line, 1),
         options: {isWholeLine: true, className: "highlight"}}
       ]);
     }
-  }, [editor, highlight, entry]);
+  }, [editor, highlight, frame]);
 
   return (
     <div>
@@ -163,7 +161,7 @@ export default function Home() {
         <option value="half">half</option>
       </select>&nbsp;
       {isLoading && <span className="loader"></span>}
-      <div>{entry && trace && trace.strtable[entry.user_filename]}</div>
+      <div>{frame && trace && trace.strtable[frame.filename]}</div>
       {file && (
         <Editor
           height="500px"
@@ -184,12 +182,11 @@ export default function Home() {
         onChange={handleSliderChange}
       />
       <ul>
-        <li>func: {JSON.stringify(entry?.func)}</li>
+        <li>target: {JSON.stringify(entry?.target)}</li>
         <li>args: {JSON.stringify(entry?.args)}</li>
         <li>kwargs: {JSON.stringify(entry?.kwargs)}</li>
         <li>ret: {JSON.stringify(entry?.ret)}</li>
-        <li>user_args: {JSON.stringify(entry?.user_args)}</li>
-        <li>user_kwargs: {JSON.stringify(entry?.user_kwargs)}</li>
+        <li>local: {JSON.stringify(frame?.locals)}</li>
       </ul>
     </div>
   );
