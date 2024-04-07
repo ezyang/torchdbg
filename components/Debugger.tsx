@@ -63,7 +63,7 @@ export default function Home() {
       return;
     }
     setIsLoading(true);
-    const response = await fetch("http://ezyang.com/public/" + e.target.value + ".log", {cache: 'force-cache'})
+    const response = await fetch("http://ezyang.com/public/" + e.target.value + ".log")
     const result = await response.text();
     setIsLoading(false);
     setFile(result);
@@ -129,7 +129,7 @@ export default function Home() {
   }, [file]);
 
   const entry = trace && index < trace.entries.length ? trace.entries[index] : null;
-  const frame = entry && entry.stack ? entry.stack[0] : null;
+  const frame = entry && entry.stack && entry.stack.length ? entry.stack[0] : null;
 
   const source = trace && frame ? trace.sourcemap[frame.filename] : "";
 
@@ -158,7 +158,6 @@ export default function Home() {
       <select value={example || ''} onChange={handleSelectChange}>
         <option value=""></option>
         <option value="maskrcnn">maskrcnn</option>
-        <option value="half">half</option>
       </select>&nbsp;
       {isLoading && <span className="loader"></span>}
       <div>{frame && trace && trace.strtable[frame.filename]}</div>
