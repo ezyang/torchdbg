@@ -98,8 +98,15 @@ class LoggingMode(TorchFunctionMode):
                 "shape": a.shape,
                 # TODO: other metadata; consider using MetaTensorDesc
             }
+        elif isinstance(a, torch.nn.Module):
+            # TODO: dump these too!
+            return "Module()"
         else:
-            return repr(a)
+            res = repr(a)
+            if len(res) > 100:
+                return repr(type(a))
+            else:
+                return res
 
     def __torch_function__(self, func, tys, args=(), kwargs=None):
         if kwargs is None:
@@ -134,6 +141,9 @@ class LoggingMode(TorchFunctionMode):
             # well defined
             filename = frame.f_code.co_filename
             file_id = intern_string(filename)
+            lcls = dict(lcls)
+            if 'self' in lcls:
+                del lcls['self']
             stack.append({
                 'name': frame.f_code.co_name,
                 'line': frame.f_lineno,
