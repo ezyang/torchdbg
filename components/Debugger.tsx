@@ -73,7 +73,7 @@ export default function Home() {
       return;
     }
     setIsLoading(true);
-    const response = await fetch("http://ezyang.com/public/" + e.target.value + ".log")
+    const response = await fetch("https://ezyang.com/public/" + e.target.value + ".log")
     const result = await response.text();
     setIsLoading(false);
     setFile(result);
