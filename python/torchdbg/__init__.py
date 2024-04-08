@@ -65,7 +65,6 @@ class LoggingMode(TorchFunctionMode):
         self.memo = WeakTensorKeyDictionary()
         self.next_id = 0
         self.skip = skip
-        self.lines_traversed = defaultdict(set)
 
     def __enter__(self):
         frame = inspect.currentframe()
@@ -112,6 +111,11 @@ class LoggingMode(TorchFunctionMode):
         if kwargs is None:
             kwargs = {}
 
+        # Don't bother with accessors
+        func_name = resolve_name(func)
+        if func_name is not None and func_name.endswith('.__get__'):
+            return func(*args, **kwargs)
+
         # The more complicated user frame plan
         #
         # We would like to record multiple levels of frames, so that we can implement
@@ -150,9 +154,7 @@ class LoggingMode(TorchFunctionMode):
                 'filename': file_id,
                 'locals': self._json(lcls),
             })
-            self.lines_traversed[file_id].add(frame.f_lineno)
-            if len(self.lines_traversed[file_id]) > 1:
-                dump_source(filename)
+            dump_source(filename)
 
         while frame:
             if not frame.f_code.co_filename.startswith(uninteresting_dirs):
@@ -167,7 +169,7 @@ class LoggingMode(TorchFunctionMode):
 
         rs = func(*args, **kwargs)
         trace_structured("eager_dispatch", metadata_fn=lambda: {
-            "target": resolve_name(func),
+            "target": func_name or str(func),
             "stack": stack,
             "args": self._json(args),
             "kwargs": self._json(kwargs),
