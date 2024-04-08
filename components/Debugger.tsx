@@ -15,7 +15,11 @@ interface IFrame {
   name: string,
   line: number,
   filename: number,
-  locals: object,
+  locals: { [name: string]: object },
+}
+
+function eq_frame(a: IFrame, b: IFrame) {
+  return a.name === b.name && a.line === b.line && a.filename === b.filename;
 }
 
 interface IEntry {
@@ -45,7 +49,6 @@ export default function Home() {
   const example = searchParams.get('example') || '';
 
   const [file, setFile] = useState<string>(sample);
-  const [index, setIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSelectChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -69,6 +72,7 @@ export default function Home() {
     setFile(result);
   };
 
+  // TODO: Empty dep array here causes an error but example is incorrect
   useEffect(() => {
     handleSelectChange({ target: {value: example} } as React.ChangeEvent<HTMLSelectElement>);
   }, []);
@@ -81,15 +85,118 @@ export default function Home() {
     }
   };
 
-  const handleSliderChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setIndex(Number(event.target.value));
+  // Our representation of location inside the trace is interesting.
+  // Imagine that the trace forms of a tree, where paths are stack traces.
+  //
+  // At any given point in time, our position is represented by two
+  // pieces of data:
+  //  - The particular entry (leaf) that is executing (i.e., the description
+  //    box below)
+  //  - The particular node in the path to leaf, which represents our level
+  //    of "zoom" when viewing
+  //
+  // We want to support zooming in/out, as well as going next/prev at a
+  // particular zoom level.  We also want to be able to single step to the
+  // next leaf.
+  //
+  // We continue to maintain all entries in a flat list.  The inefficient
+  // implementation is simply to do a linear search to find the next relevant
+  // entry.  We implement this for now.
+  //
+  // One problem is, given a frame in the stack we are zoomed in on, how
+  // should this change when we advance a single step?  Some options:
+  //
+  //  1. Jump straight to innermost frame (as that's the only way to see that
+  //     code is changing).
+  //  2. Stubbornly stay on the current depth.  This doesn't work once we exit
+  //     the frame.
+  //
+  // We maintain if you wanted to do (2), you should do next.  So step
+  // destroys zoom, next preserves zoom.  Because step always goes to
+  // inner-most zoom, we will say the innermost zoom is zero for convenience.
+
+  const [index, setIndex] = useState(0);
+  const [zoom, setZoom] = useState(0); // 0 = outermost
+
+  const handleStepSliderChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const i = Number(event.target.value)
+    setIndex(i);
+    setZoom(trace.entries[i].stack.length - 1);
+  };
+
+  const handleNav = (sign: number) => {
+    // given stack [A, B]
+    // and zoom = 1 (focus on B)
+    // then path is [A] (does not include zoom)
+    const path = entry.stack.slice(0, zoom - 1);
+    for (let i = index + sign; i < trace.entries.length && i >= 0; i += sign) {
+      const next_entry = trace.entries[i];
+      if (next_entry.stack.length < path.length) {
+        // We've returned/entered the stack frame we're trying to travel
+        break;
+      }
+      // Check the path has stayed the same
+      const next_path = next_entry.stack.slice(0, path.length);
+      let ok = true;
+      for (let j = 0; j < path.length; j++) {
+        if (!eq_frame(path[j], next_path[j])) {
+          ok = false;
+          break;
+        }
+      }
+      if (!ok) {
+        break;
+      }
+
+      if (zoom >= next_entry.stack.length) {
+        break;
+      }
+
+      // Check that the current zoom frame has changed
+      // TODO: make this logic suck less
+      const next_frame: IFrame = next_entry.stack[zoom];
+      if (eq_frame(frame, next_frame) && zoom != next_entry.stack.length - 1) {
+        continue;
+      }
+      if (frame.filename !== next_frame.filename || frame.name !== next_frame.name) {
+        break;
+      }
+      // Also advance if there's no lower frames
+      if (frame.line !== next_frame.line || zoom == next_entry.stack.length - 1) {
+        setIndex(i);
+        break;
+      }
+      // Some awkwardness here: if a function is called in a loop from the
+      // outer context, we will advance into the next call
+    }
+  };
+
+  const handlePrev = (event: React.MouseEvent<HTMLInputElement>) => {
+    handleNav(-1);
+  };
+
+  const handleNext = (event: React.MouseEvent<HTMLInputElement>) => {
+    handleNav(1);
+  };
+
+
+  const handleUp = (event: React.MouseEvent<HTMLInputElement>) => {
+    if (zoom != 0) setZoom(zoom - 1);
+  };
+
+  const handleDown = (event: React.MouseEvent<HTMLInputElement>) => {
+    if (zoom != entry.stack.length - 1) setZoom(zoom + 1);
+  };
+
+  const handleZoomSliderChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setZoom(Number(event.target.value));
   };
 
   const trace = useMemo(() => {
-    if (file === null) return null;
+    const trace = new Trace();
+    if (file === null) return trace;
     const lines = file.split('\n');
     let i = -1;
-    const trace = new Trace();
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       const caps = line.match(re_glog);
@@ -122,16 +229,18 @@ export default function Home() {
         trace.sourcemap[metadata.dump_source.filename] = payload;
       }
       if ("eager_dispatch" in metadata) {
-        trace.entries.push(metadata["eager_dispatch"]);
+        const entry = metadata["eager_dispatch"];
+        entry.stack.reverse();  // TODO: fix in emission
+        trace.entries.push(entry);
       }
     }
     return trace;
   }, [file]);
 
-  const entry = trace && index < trace.entries.length ? trace.entries[index] : null;
-  const frame = entry && entry.stack && entry.stack.length ? entry.stack[0] : null;
+  const entry: IEntry = trace.entries[index];
+  const frame = entry.stack[zoom];
 
-  const source = trace && frame ? trace.sourcemap[frame.filename] : "";
+  const source = frame ? trace.sourcemap[frame.filename] : "";
 
   const [editor, setEditor] = useState<monacoEditor.editor.IStandaloneCodeEditor | null>(null);
   const [highlight, setHighlight] = useState<monacoEditor.editor.IEditorDecorationsCollection | null>(null);
@@ -173,19 +282,47 @@ export default function Home() {
           }}
         />
       )}
-      <input
+      <div>Step: <input
         type="range"
         min="0"
-        max={trace ? trace.entries.length - 1 : 0}
+        max={trace.entries.length - 1}
         value={index}
-        onChange={handleSliderChange}
+        onChange={handleStepSliderChange}
       />
+      </div>
+      <div>Zoom: <input
+        type="range"
+        min="0"
+        max={entry.stack.length - 1}
+        style={{width: entry.stack.length * 20}}
+        value={zoom}
+        onChange={handleZoomSliderChange}
+      />
+      </div>
+      <div>
+      <input type="submit" value="Prev" onClick={handlePrev} />
+      <input type="submit" value="Next" onClick={handleNext} />
+      <input type="submit" value="Up" onClick={handleUp} />
+      <input type="submit" value="Down" onClick={handleDown} />
+      </div>
+      Locals:
       <ul>
-        <li>target: {JSON.stringify(entry?.target)}</li>
-        <li>args: {JSON.stringify(entry?.args)}</li>
-        <li>kwargs: {JSON.stringify(entry?.kwargs)}</li>
-        <li>ret: {JSON.stringify(entry?.ret)}</li>
-        <li>local: {JSON.stringify(frame?.locals)}</li>
+        {Object.keys(frame.locals).map((k: string) =>
+          <li key={k}><strong>{k}</strong>: {JSON.stringify(frame.locals[k])}</li>
+        )}
+      </ul>
+      Stack:
+      <ul>
+        {entry.stack.map((frame, i) =>
+          <li key={i}>File &quot;{trace.strtable[frame.filename]}&quot;, line {frame.line}, in {frame.name}</li>
+        )}
+      </ul>
+      PyTorch call:
+      <ul>
+        <li>target: {JSON.stringify(entry.target)}</li>
+        <li>args: {JSON.stringify(entry.args)}</li>
+        <li>kwargs: {JSON.stringify(entry.kwargs)}</li>
+        <li>ret: {JSON.stringify(entry.ret)}</li>
       </ul>
     </div>
   );
