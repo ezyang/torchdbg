@@ -234,7 +234,6 @@ export default function Home() {
       }
       if ("eager_dispatch" in metadata) {
         const entry = metadata["eager_dispatch"];
-        entry.stack.reverse();  // TODO: fix in emission
         trace.entries.push(entry);
       }
     }
