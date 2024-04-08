@@ -265,9 +265,9 @@ export default function Home() {
 
   const render = (x: object) => {
     if (typeof x == "number" || typeof x == "string" || typeof x == "boolean" || x === null || x === undefined) {
-      return <span>{JSON.stringify(x)}</span>
+      return <span>{JSON.stringify(x, null, " ")}</span>
     } else if (x instanceof Array) {
-      const r = JSON.stringify(x);
+      const r = JSON.stringify(x, null, " ");
       if (r.length < 40) {
         return <span>{r}</span>
       } else {
