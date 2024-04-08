@@ -18,6 +18,10 @@ interface IFrame {
   locals: { [name: string]: object },
 }
 
+interface ObjectWithStringIndex {
+  [key: string]: object;
+}
+
 function eq_frame(a: IFrame, b: IFrame) {
   return a.name === b.name && a.line === b.line && a.filename === b.filename;
 }
@@ -273,15 +277,17 @@ export default function Home() {
         </ol>
       }
     } else {
-      if ("shape" in x) {
-        return <span>torch.tensor(..., shape=[{x.shape.join(", ")}], dtype={x.dtype})</span>
+      if ("shape" in x && "dtype" in x) {
+        const shape = x.shape as number[];
+        const dtype = x.dtype as string;
+        return <span>torch.tensor(..., shape=[{shape.join(", ")}], dtype={dtype})</span>
       }
-      return <ul>{Object.keys(x).map((k: string) => <li key={k}>{k}: {render(x[k])}</li>)}</ul>
+      return <ul>{Object.keys(x).map((k: string) => <li key={k}>{k}: {render((x as ObjectWithStringIndex)[k])}</li>)}</ul>
     }
   };
 
-  const Row = (props) =>
-    <tr><th className="text-right align-top">{props.name}:</th><td>{render(props.value)}</td></tr>
+  const Row = (props: {name: string, value: unknown}) =>
+    <tr><th className="text-right align-top">{props.name}:</th><td>{render(props.value as object)}</td></tr>
 
   return (
     <main className="flex min-h-screen flex-col p-1 bg-gray-200 text-sm">
