@@ -76,10 +76,9 @@ export default function Home() {
     setFile(result);
   };
 
-  // TODO: Empty dep array here causes an error but example is incorrect
   useEffect(() => {
     handleSelectChange({ target: {value: example} } as React.ChangeEvent<HTMLSelectElement>);
-  }, []);
+  }, [example]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
