@@ -58,7 +58,7 @@ export default function Home() {
   const handleSelectChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     // TODO: handle race condition
     const selectedOption = e.target.value;
-    if (selectOption != example) {
+    if (selectedOption != example) {
       const newSearchParams = new URLSearchParams(searchParams);
       if (selectedOption) {
         newSearchParams.set('example', selectedOption);
@@ -69,6 +69,7 @@ export default function Home() {
     }
 
     if (!selectedOption) {
+      setFile(sample);
       return;
     }
     setIsLoading(true);
