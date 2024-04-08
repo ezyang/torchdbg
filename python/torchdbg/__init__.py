@@ -170,7 +170,7 @@ class LoggingMode(TorchFunctionMode):
         rs = func(*args, **kwargs)
         trace_structured("eager_dispatch", metadata_fn=lambda: {
             "target": func_name or str(func),
-            "stack": stack,
+            "stack": list(reversed(stack)),
             "args": self._json(args),
             "kwargs": self._json(kwargs),
             "ret": self._json(rs),
