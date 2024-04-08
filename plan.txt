@@ -16,5 +16,4 @@
       ship
 
 
-- priority: multiple stack levels seems really helpful (next vs step)
-
+- go to line: https://microsoft.github.io/monaco-editor/playground.html?source=v0.47.0#example-interacting-with-the-editor-adding-an-action-to-an-editor-instance
