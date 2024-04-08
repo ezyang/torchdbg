@@ -255,75 +255,116 @@ export default function Home() {
       editor.revealLineInCenter(frame.line);  // zero or one indexed?
       highlight.set([{
         range: new monacoEditor.Range(frame.line, 1, frame.line, 1),
-        options: {isWholeLine: true, className: "highlight"}}
+        options: {isWholeLine: true, className: "bg-yellow-300"}}
       ]);
     }
   }, [editor, highlight, frame]);
 
+  const render = (x: object) => {
+    if (typeof x == "number" || typeof x == "string" || typeof x == "boolean" || x === null || x === undefined) {
+      return <span>{JSON.stringify(x)}</span>
+    } else if (x instanceof Array) {
+      const r = JSON.stringify(x);
+      if (r.length < 40) {
+        return <span>{r}</span>
+      } else {
+        return <ol className="ml-4">
+          {x.map((y: object, i: number) => <li key={i}><span className="text-purple-800 font-bold text-xs">{i}.</span> {render(y)}</li>)}
+        </ol>
+      }
+    } else {
+      if ("shape" in x) {
+        return <span>torch.tensor(..., shape=[{x.shape.join(", ")}], dtype={x.dtype})</span>
+      }
+      return <ul>{Object.keys(x).map((k: string) => <li key={k}>{k}: {render(x[k])}</li>)}</ul>
+    }
+  };
+
+  const Row = (props) =>
+    <tr><th className="text-right align-top">{props.name}:</th><td>{render(props.value)}</td></tr>
+
   return (
-    <div>
-      <input type="file" onChange={handleFileChange} />
-      or pick an example:
-      <select value={example || ''} onChange={handleSelectChange}>
-        <option value=""></option>
-        <option value="maskrcnn">maskrcnn</option>
-      </select>&nbsp;
-      {isLoading && <span className="loader"></span>}
-      <div>{frame && trace && trace.strtable[frame.filename]}</div>
-      {file && (
-        <Editor
-          height="500px"
-          defaultLanguage="javascript"
-          value={source}
-          onMount={handleEditorDidMount}
-          options={{
-            readOnly: true,
-            minimap: { enabled: false },
-          }}
+    <main className="flex min-h-screen flex-col p-1 bg-gray-200 text-sm">
+      <div className="flex flex-row flex-item flex-shrink">
+        <div className="flex-item flex-grow">{frame && trace && trace.strtable[frame.filename]}</div>
+        <div className="flex-item flex-shrink">
+          <input type="file" onChange={handleFileChange} />
+          or example:
+          <select value={example || ''} onChange={handleSelectChange}>
+            <option value=""></option>
+            <option value="maskrcnn">maskrcnn</option>
+          </select>&nbsp;
+          {isLoading && <span className="loader"></span>}
+        </div>
+      </div>
+      <div className="flex-item flex-shrink">
+        {file && (
+          <Editor
+            height="50vh"
+            defaultLanguage="javascript"
+            value={source}
+            onMount={handleEditorDidMount}
+            options={{
+              readOnly: true,
+              minimap: { enabled: false },
+            }}
+          />
+        )}
+      </div>
+      <div className="flex-item flex-shrink">
+        <div>Step: <input
+          type="range"
+          min="0"
+          max={trace.entries.length - 1}
+          value={index}
+          onChange={handleStepSliderChange}
         />
-      )}
-      <div>Step: <input
-        type="range"
-        min="0"
-        max={trace.entries.length - 1}
-        value={index}
-        onChange={handleStepSliderChange}
-      />
+        </div>
+        <div>Zoom: <input
+          type="range"
+          min="0"
+          max={entry.stack.length - 1}
+          style={{width: entry.stack.length * 20}}
+          value={zoom}
+          onChange={handleZoomSliderChange}
+        />
+        </div>
+        <div className="space-x-1 [&>input]:bg-blue-500 hover:[&>input]:bg-blue-700  [&>input]:text-white [&>input]:text-white [&>input]:p-1">
+          <input type="submit" value="Prev" onClick={handlePrev} />
+          <input type="submit" value="Next" onClick={handleNext} />
+          <input type="submit" value="Up" onClick={handleUp} />
+          <input type="submit" value="Down" onClick={handleDown} />
+        </div>
       </div>
-      <div>Zoom: <input
-        type="range"
-        min="0"
-        max={entry.stack.length - 1}
-        style={{width: entry.stack.length * 20}}
-        value={zoom}
-        onChange={handleZoomSliderChange}
-      />
+      <div className="flex-item flex-grow flex flex-row pt-2">
+        <div className="flex-item flex-1">
+          <h2 className="bg-gray-500 text-white pl-2">Locals</h2>
+          <ul className="pl-2 pt-2">
+            {Object.keys(frame.locals).map((k: string) =>
+              <li key={k}><strong>{k}</strong>: {render(frame.locals[k])}</li>
+            )}
+          </ul>
+        </div>
+        <div className="flex-item flex-1">
+          <h2 className="bg-gray-500 text-white pl-2">PyTorch call</h2>
+          <table className="border-separate border-spacing-x-2 pl-2 pt-2">
+            <tbody>
+              <Row name="target" value={entry.target} />
+              <Row name="args" value={entry.args} />
+              <Row name="kwargs" value={entry.kwargs} />
+              <Row name="ret" value={entry.ret} />
+            </tbody>
+          </table>
+        </div>
       </div>
-      <div>
-      <input type="submit" value="Prev" onClick={handlePrev} />
-      <input type="submit" value="Next" onClick={handleNext} />
-      <input type="submit" value="Up" onClick={handleUp} />
-      <input type="submit" value="Down" onClick={handleDown} />
+      <div className="flex-item flex-1 overflow-scroll whitespace-nowrap">
+        <h2 className="bg-gray-500 text-white pl-2">Stack</h2>
+        <ul className="pl-2 pt-2">
+          {entry.stack.map((frame, i) =>
+            <li key={i}>File &quot;{trace.strtable[frame.filename]}&quot;, line {frame.line}, in {frame.name}</li>
+          )}
+        </ul>
       </div>
-      Locals:
-      <ul>
-        {Object.keys(frame.locals).map((k: string) =>
-          <li key={k}><strong>{k}</strong>: {JSON.stringify(frame.locals[k])}</li>
-        )}
-      </ul>
-      Stack:
-      <ul>
-        {entry.stack.map((frame, i) =>
-          <li key={i}>File &quot;{trace.strtable[frame.filename]}&quot;, line {frame.line}, in {frame.name}</li>
-        )}
-      </ul>
-      PyTorch call:
-      <ul>
-        <li>target: {JSON.stringify(entry.target)}</li>
-        <li>args: {JSON.stringify(entry.args)}</li>
-        <li>kwargs: {JSON.stringify(entry.kwargs)}</li>
-        <li>ret: {JSON.stringify(entry.ret)}</li>
-      </ul>
-    </div>
+    </main>
   );
 }
