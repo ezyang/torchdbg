@@ -76,9 +76,11 @@ export default function Home() {
     setFile(result);
   };
 
+  /*
   useEffect(() => {
     handleSelectChange({ target: {value: example} } as React.ChangeEvent<HTMLSelectElement>);
   }, [example]);
+  */
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
