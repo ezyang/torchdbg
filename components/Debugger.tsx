@@ -58,13 +58,15 @@ export default function Home() {
   const handleSelectChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     // TODO: handle race condition
     const selectedOption = e.target.value;
-    const newSearchParams = new URLSearchParams(searchParams);
-    if (selectedOption) {
-      newSearchParams.set('example', selectedOption);
-    } else {
-      newSearchParams.delete('example');
+    if (selectOption != example) {
+      const newSearchParams = new URLSearchParams(searchParams);
+      if (selectedOption) {
+        newSearchParams.set('example', selectedOption);
+      } else {
+        newSearchParams.delete('example');
+      }
+      router.push(`${pathname}?${newSearchParams.toString()}`);
     }
-    router.push(`${pathname}?${newSearchParams.toString()}`);
 
     if (!selectedOption) {
       return;
@@ -76,11 +78,9 @@ export default function Home() {
     setFile(result);
   };
 
-  /*
   useEffect(() => {
     handleSelectChange({ target: {value: example} } as React.ChangeEvent<HTMLSelectElement>);
   }, [example]);
-  */
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
