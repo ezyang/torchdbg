@@ -343,7 +343,7 @@ export default function Home() {
   );
 
   return (
-    <main className="flex min-h-screen flex-col p-1 bg-gray-200 text-sm">
+    <main className="flex min-h-screen flex-col p-1 bg-gray-200 text-sm text-black">
       <div className="flex flex-row flex-item flex-shrink">
         <div className="flex-item flex-grow">
           {frame && trace && trace.strtable[frame.filename]}
