@@ -2,11 +2,11 @@
 
 torchdbg is two things:
 
-* A tracer that dumps all PyTorch operations that occur in your program to a
+- A tracer that dumps all PyTorch operations that occur in your program to a
   structured log (formatted compatibly with
   [tlparse](https://github.com/ezyang/tlparse))
 
-* A React UI for visualizing the traces produced above, in the same style
+- A React UI for visualizing the traces produced above, in the same style
   as a single-stepping debugger.
 
 ![image](https://github.com/ezyang/torchdbg/assets/13564/912dff04-fb5d-4ea8-a99c-42e73bb4222f)
@@ -33,7 +33,7 @@ with torchdbg.LoggingMode():
 ```
 
 By default, we do not log anything: run with `TORCH_TRACE=/tmp/trace`
-to specify the log directory.  If you are running a distributed training run,
+to specify the log directory. If you are running a distributed training run,
 multiple trace files will be generated per rank.
 
 ### React UI

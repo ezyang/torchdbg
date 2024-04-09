@@ -1,14 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
+  output: "export",
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
-    config.module.rules.push(
-      {
-        test: /example\/.*\.log$/,
-        type: 'asset/source',
-      }
-    )
-    return config
+    config.module.rules.push({
+      test: /example\/.*\.log$/,
+      type: "asset/source",
+    });
+    return config;
   },
 };
 

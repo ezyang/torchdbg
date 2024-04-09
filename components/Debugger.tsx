@@ -1,21 +1,22 @@
-'use client';
+"use client";
 
-import dynamic from 'next/dynamic';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useRef, useState, useEffect, useMemo } from 'react';
-import { Editor, useMonaco } from '@monaco-editor/react';
-import * as monacoEditor from 'monaco-editor/esm/vs/editor/editor.api';
+import dynamic from "next/dynamic";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRef, useState, useEffect, useMemo } from "react";
+import { Editor, useMonaco } from "@monaco-editor/react";
+import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
 
 // TODO: make this lazy
-import sample from '../example/test.log';
+import sample from "../example/test.log";
 
-const re_glog = /(?<level>[VIWEC])(?<month>\d{2})(?<day>\d{2}) (?<hour>\d{2}):(?<minute>\d{2}):(?<second>\d{2}).(?<millisecond>\d{6}) (?<thread>\d+)(?<pathname>[^:]+):(?<line>\d+)\] (?<payload>.)/;
+const re_glog =
+  /(?<level>[VIWEC])(?<month>\d{2})(?<day>\d{2}) (?<hour>\d{2}):(?<minute>\d{2}):(?<second>\d{2}).(?<millisecond>\d{6}) (?<thread>\d+)(?<pathname>[^:]+):(?<line>\d+)\] (?<payload>.)/;
 
 interface IFrame {
-  name: string,
-  line: number,
-  filename: number,
-  locals: { [name: string]: object },
+  name: string;
+  line: number;
+  filename: number;
+  locals: { [name: string]: object };
 }
 
 interface ObjectWithStringIndex {
@@ -27,17 +28,17 @@ function eq_frame(a: IFrame, b: IFrame) {
 }
 
 interface IEntry {
-  target: string,
-  stack: IFrame[],
-  args: object,
-  kwargs: object,
-  ret: object,
+  target: string;
+  stack: IFrame[];
+  args: object;
+  kwargs: object;
+  ret: object;
 }
 
 class Trace {
-  public entries: IEntry[]
-  public sourcemap: { [filename: string]: string }
-  public strtable: { [id: number]: string }
+  public entries: IEntry[];
+  public sourcemap: { [filename: string]: string };
+  public strtable: { [id: number]: string };
 
   constructor() {
     this.entries = [];
@@ -50,20 +51,22 @@ export default function Home() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const example = searchParams.get('example') || '';
+  const example = searchParams.get("example") || "";
 
   const [file, setFile] = useState<string>(sample);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSelectChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleSelectChange = async (
+    e: React.ChangeEvent<HTMLSelectElement>,
+  ) => {
     // TODO: handle race condition
     const selectedOption = e.target.value;
     if (selectedOption != example) {
       const newSearchParams = new URLSearchParams(searchParams);
       if (selectedOption) {
-        newSearchParams.set('example', selectedOption);
+        newSearchParams.set("example", selectedOption);
       } else {
-        newSearchParams.delete('example');
+        newSearchParams.delete("example");
       }
       router.push(`${pathname}?${newSearchParams.toString()}`);
     }
@@ -73,18 +76,22 @@ export default function Home() {
       return;
     }
     setIsLoading(true);
-    const response = await fetch("https://ezyang.scripts.mit.edu/ezyang/public/" + e.target.value + ".log")
+    const response = await fetch(
+      "https://ezyang.scripts.mit.edu/ezyang/public/" + e.target.value + ".log",
+    );
     const result = await response.text();
     setIsLoading(false);
     setFile(result);
   };
 
   useEffect(() => {
-    handleSelectChange({ target: {value: example} } as React.ChangeEvent<HTMLSelectElement>);
+    handleSelectChange({
+      target: { value: example },
+    } as React.ChangeEvent<HTMLSelectElement>);
   }, [example]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+    const file = e.target.files?.[0];
     if (file) {
       const text = await file.text();
       setFile(text);
@@ -124,8 +131,10 @@ export default function Home() {
   const [index, setIndex] = useState(0);
   const [zoom, setZoom] = useState(0); // 0 = outermost
 
-  const handleStepSliderChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const i = Number(event.target.value)
+  const handleStepSliderChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const i = Number(event.target.value);
     setIndex(i);
     setZoom(trace.entries[i].stack.length - 1);
   };
@@ -164,11 +173,17 @@ export default function Home() {
       if (eq_frame(frame, next_frame) && zoom != next_entry.stack.length - 1) {
         continue;
       }
-      if (frame.filename !== next_frame.filename || frame.name !== next_frame.name) {
+      if (
+        frame.filename !== next_frame.filename ||
+        frame.name !== next_frame.name
+      ) {
         break;
       }
       // Also advance if there's no lower frames
-      if (frame.line !== next_frame.line || zoom == next_entry.stack.length - 1) {
+      if (
+        frame.line !== next_frame.line ||
+        zoom == next_entry.stack.length - 1
+      ) {
         setIndex(i);
         break;
       }
@@ -185,7 +200,6 @@ export default function Home() {
     handleNav(1);
   };
 
-
   const handleUp = (event: React.MouseEvent<HTMLInputElement>) => {
     if (zoom != 0) setZoom(zoom - 1);
   };
@@ -194,14 +208,16 @@ export default function Home() {
     if (zoom != entry.stack.length - 1) setZoom(zoom + 1);
   };
 
-  const handleZoomSliderChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleZoomSliderChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     setZoom(Number(event.target.value));
   };
 
   const trace = useMemo(() => {
     const trace = new Trace();
     if (file === null) return trace;
-    const lines = file.split('\n');
+    const lines = file.split("\n");
     let i = -1;
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
@@ -215,10 +231,10 @@ export default function Home() {
       } catch (e) {
         continue;
       }
-      let payload = ""
+      let payload = "";
       if ("has_payload" in metadata) {
         let first = true;
-        for (; i + 1 < lines.length && lines[i + 1].startsWith('\t'); i++) {
+        for (; i + 1 < lines.length && lines[i + 1].startsWith("\t"); i++) {
           const payload_line = lines[i + 1];
           if (!first) {
             payload += "\n";
@@ -247,60 +263,99 @@ export default function Home() {
 
   const source = frame ? trace.sourcemap[frame.filename] : "";
 
-  const [editor, setEditor] = useState<monacoEditor.editor.IStandaloneCodeEditor | null>(null);
-  const [highlight, setHighlight] = useState<monacoEditor.editor.IEditorDecorationsCollection | null>(null);
+  const [editor, setEditor] =
+    useState<monacoEditor.editor.IStandaloneCodeEditor | null>(null);
+  const [highlight, setHighlight] =
+    useState<monacoEditor.editor.IEditorDecorationsCollection | null>(null);
 
-  const handleEditorDidMount = (editor: monacoEditor.editor.IStandaloneCodeEditor, monaco: typeof monacoEditor) => {
+  const handleEditorDidMount = (
+    editor: monacoEditor.editor.IStandaloneCodeEditor,
+    monaco: typeof monacoEditor,
+  ) => {
     setEditor(editor);
     setHighlight(editor.createDecorationsCollection());
   };
 
   useEffect(() => {
     if (editor && frame && highlight) {
-      editor.revealLineInCenter(frame.line);  // zero or one indexed?
-      highlight.set([{
-        range: new monacoEditor.Range(frame.line, 1, frame.line, 1),
-        options: {isWholeLine: true, className: "bg-yellow-300"}}
+      editor.revealLineInCenter(frame.line); // zero or one indexed?
+      highlight.set([
+        {
+          range: new monacoEditor.Range(frame.line, 1, frame.line, 1),
+          options: { isWholeLine: true, className: "bg-yellow-300" },
+        },
       ]);
     }
   }, [editor, highlight, frame]);
 
   const render = (x: object) => {
-    if (typeof x == "number" || typeof x == "string" || typeof x == "boolean" || x === null || x === undefined) {
-      return <span>{JSON.stringify(x, null, " ")}</span>
+    if (
+      typeof x == "number" ||
+      typeof x == "string" ||
+      typeof x == "boolean" ||
+      x === null ||
+      x === undefined
+    ) {
+      return <span>{JSON.stringify(x, null, " ")}</span>;
     } else if (x instanceof Array) {
       const r = JSON.stringify(x, null, " ");
       if (r.length < 40) {
-        return <span>{r}</span>
+        return <span>{r}</span>;
       } else {
-        return <ol className="ml-4">
-          {x.map((y: object, i: number) => <li key={i}><span className="text-purple-800 font-bold text-xs">{i}.</span> {render(y)}</li>)}
-        </ol>
+        return (
+          <ol className="ml-4">
+            {x.map((y: object, i: number) => (
+              <li key={i}>
+                <span className="text-purple-800 font-bold text-xs">{i}.</span>{" "}
+                {render(y)}
+              </li>
+            ))}
+          </ol>
+        );
       }
     } else {
       if ("shape" in x && "dtype" in x) {
         const shape = x.shape as number[];
         const dtype = x.dtype as string;
-        return <span>torch.tensor(..., shape=[{shape.join(", ")}], dtype={dtype})</span>
+        return (
+          <span>
+            torch.tensor(..., shape=[{shape.join(", ")}], dtype={dtype})
+          </span>
+        );
       }
-      return <ul>{Object.keys(x).map((k: string) => <li key={k}>{k}: {render((x as ObjectWithStringIndex)[k])}</li>)}</ul>
+      return (
+        <ul>
+          {Object.keys(x).map((k: string) => (
+            <li key={k}>
+              {k}: {render((x as ObjectWithStringIndex)[k])}
+            </li>
+          ))}
+        </ul>
+      );
     }
   };
 
-  const Row = (props: {name: string, value: unknown}) =>
-    <tr><th className="text-right align-top">{props.name}:</th><td>{render(props.value as object)}</td></tr>
+  const Row = (props: { name: string; value: unknown }) => (
+    <tr>
+      <th className="text-right align-top">{props.name}:</th>
+      <td>{render(props.value as object)}</td>
+    </tr>
+  );
 
   return (
     <main className="flex min-h-screen flex-col p-1 bg-gray-200 text-sm">
       <div className="flex flex-row flex-item flex-shrink">
-        <div className="flex-item flex-grow">{frame && trace && trace.strtable[frame.filename]}</div>
+        <div className="flex-item flex-grow">
+          {frame && trace && trace.strtable[frame.filename]}
+        </div>
         <div className="flex-item flex-shrink">
           <input type="file" onChange={handleFileChange} />
           or example:
-          <select value={example || ''} onChange={handleSelectChange}>
+          <select value={example || ""} onChange={handleSelectChange}>
             <option value=""></option>
             <option value="maskrcnn">maskrcnn</option>
-          </select>&nbsp;
+          </select>
+          &nbsp;
           {isLoading && <span className="loader"></span>}
         </div>
       </div>
@@ -319,22 +374,26 @@ export default function Home() {
         )}
       </div>
       <div className="flex-item flex-shrink">
-        <div>Step: <input
-          type="range"
-          min="0"
-          max={trace.entries.length - 1}
-          value={index}
-          onChange={handleStepSliderChange}
-        />
+        <div>
+          Step:{" "}
+          <input
+            type="range"
+            min="0"
+            max={trace.entries.length - 1}
+            value={index}
+            onChange={handleStepSliderChange}
+          />
         </div>
-        <div>Zoom: <input
-          type="range"
-          min="0"
-          max={entry.stack.length - 1}
-          style={{width: entry.stack.length * 20}}
-          value={zoom}
-          onChange={handleZoomSliderChange}
-        />
+        <div>
+          Zoom:{" "}
+          <input
+            type="range"
+            min="0"
+            max={entry.stack.length - 1}
+            style={{ width: entry.stack.length * 20 }}
+            value={zoom}
+            onChange={handleZoomSliderChange}
+          />
         </div>
         <div className="space-x-1 [&>input]:bg-blue-500 hover:[&>input]:bg-blue-700  [&>input]:text-white [&>input]:text-white [&>input]:p-1">
           <input type="submit" value="Prev" onClick={handlePrev} />
@@ -347,9 +406,11 @@ export default function Home() {
         <div className="flex-item flex-1">
           <h2 className="bg-gray-500 text-white pl-2">Locals</h2>
           <ul className="pl-2 pt-2">
-            {Object.keys(frame.locals).map((k: string) =>
-              <li key={k}><strong>{k}</strong>: {render(frame.locals[k])}</li>
-            )}
+            {Object.keys(frame.locals).map((k: string) => (
+              <li key={k}>
+                <strong>{k}</strong>: {render(frame.locals[k])}
+              </li>
+            ))}
           </ul>
         </div>
         <div className="flex-item flex-1">
@@ -367,9 +428,12 @@ export default function Home() {
       <div className="flex-item flex-1 overflow-scroll whitespace-nowrap">
         <h2 className="bg-gray-500 text-white pl-2">Stack</h2>
         <ul className="pl-2 pt-2">
-          {entry.stack.map((frame, i) =>
-            <li key={i}>File &quot;{trace.strtable[frame.filename]}&quot;, line {frame.line}, in {frame.name}</li>
-          )}
+          {entry.stack.map((frame, i) => (
+            <li key={i}>
+              File &quot;{trace.strtable[frame.filename]}&quot;, line{" "}
+              {frame.line}, in {frame.name}
+            </li>
+          ))}
         </ul>
       </div>
     </main>

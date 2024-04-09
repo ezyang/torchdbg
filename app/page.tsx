@@ -1,10 +1,12 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import dynamic from 'next/dynamic'
+import { useState } from "react";
+import dynamic from "next/dynamic";
 
-const Debugger = dynamic(() => import('../components/Debugger'), { ssr: false })
+const Debugger = dynamic(() => import("../components/Debugger"), {
+  ssr: false,
+});
 
 export default function Main() {
-  return <Debugger />
+  return <Debugger />;
 }
