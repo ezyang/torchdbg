@@ -139,7 +139,7 @@ export default function Home() {
     setZoom(trace.entries[i].stack.length - 1);
   };
 
-  const handleNav = (sign: number) => {
+  const handleNav = (sign: number, nextLine: bool = false) => {
     // given stack [A, B]
     // and zoom = 1 (focus on B)
     // then path is [A] (does not include zoom)
@@ -180,10 +180,11 @@ export default function Home() {
         break;
       }
       // Also advance if there's no lower frames
-      if (
-        frame.line !== next_frame.line ||
-        zoom == next_entry.stack.length - 1
-      ) {
+      if (frame.line !== next_frame.line) {
+        setIndex(i);
+        break;
+      }
+      if (zoom == next_entry.stack.length - 1 && !nextLine) {
         setIndex(i);
         break;
       }
@@ -206,6 +207,28 @@ export default function Home() {
 
   const handleDown = (event: React.MouseEvent<HTMLInputElement>) => {
     if (zoom != entry.stack.length - 1) setZoom(zoom + 1);
+  };
+
+  const handleKeyPress = (event: React.MouseEvent<HTMLInputElement>) => {
+    if (event.key == "h") {
+      handlePrev();
+    } else if (event.key == "l") {
+      handleNext();
+    } else if (event.key == "L") {
+      handleNav(1, true);
+    } else if (event.key == "j") {
+      handleDown();
+    } else if (event.key == "J") {
+      handleNav(-1, true);
+    } else if (event.key == "k") {
+      handleUp();
+    } else if (event.key == "+") {
+      setIndex(index + 1);
+      setZoom(Math.min(trace.entries[index + 1].stack.length - 1), zoom);
+    } else if (event.key == "-") {
+      setIndex(index - 1);
+      setZoom(Math.min(trace.entries[index - 1].stack.length - 1), zoom);
+    }
   };
 
   const handleZoomSliderChange = (
@@ -400,6 +423,7 @@ export default function Home() {
           <input type="submit" value="Next" onClick={handleNext} />
           <input type="submit" value="Up" onClick={handleUp} />
           <input type="submit" value="Down" onClick={handleDown} />
+          <input type="text" value="" onKeyPress={handleKeyPress} />
         </div>
       </div>
       <div className="flex-item flex-grow flex flex-row pt-2">
