@@ -21,8 +21,8 @@ from collections import defaultdict
 
 
 uninteresting_dirs = (
-    os.path.dirname(__file__),
-    os.path.dirname(inspect.getfile(torch)),
+    os.path.join(os.path.dirname(__file__), ''),
+    os.path.join(os.path.dirname(inspect.getfile(torch)), ''),
 )
 
 
