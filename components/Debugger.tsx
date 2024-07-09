@@ -375,7 +375,7 @@ export default function Home() {
       return <span>{JSON.stringify(x, null, " ")}</span>;
     } else if (x instanceof Array) {
       const r = JSON.stringify(x, null, " ");
-      if (r.length < 40) {
+      if (r.length < 40 || r.length > 200) {
         return <span>{r}</span>;
       } else {
         return (
@@ -504,8 +504,8 @@ export default function Home() {
           (./u to step/back, j/k to next/prev in frame, h/l to adjust zoom)
         </div>
       </div>
-      <div className="flex-item flex-grow flex flex-row pt-2">
-        <div className="flex-item flex-1">
+      <div className="flex-item flex-grow flex flex-row pt-2 flex-wrap">
+        <div className="flex-item flex-1 min-w-0 w-full">
           <h2 className="bg-gray-500 text-white pl-2">Locals</h2>
           <ul className="pl-2 pt-2">
             {Object.keys(frame.locals).map((k: string) => (
@@ -515,7 +515,7 @@ export default function Home() {
             ))}
           </ul>
         </div>
-        <div className="flex-item flex-1">
+        <div className="flex-item flex-1 min-w-0 w-full">
           <h2 className="bg-gray-500 text-white pl-2">PyTorch call</h2>
           <table className="border-separate border-spacing-x-2 pl-2 pt-2">
             <tbody>
