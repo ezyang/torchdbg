@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "torchdbg"
-version = "0.3.0"
+version = "0.3.1"
 description = "PyTorch centric eager mode debugger/tracer"
 authors = ["Edward Z. Yang <ezyang@meta.com>"]
 license = "BSD-3"
