@@ -141,7 +141,7 @@ export default function Home() {
     setZoom(trace.entries[i].stack.length - 1);
   };
 
-  const handleNav = (sign: number, nextLine: bool = false) => {
+  const handleNav = (sign: number, nextLine: boolean = false) => {
     // given stack [A, B]
     // and zoom = 1 (focus on B)
     // then path is [A] (does not include zoom)
@@ -195,23 +195,31 @@ export default function Home() {
     }
   };
 
-  const handlePrev = (event: React.MouseEvent<HTMLInputElement>) => {
+  const handlePrev = (
+    event: React.MouseEvent<HTMLInputElement> | undefined = undefined,
+  ) => {
     handleNav(-1);
   };
 
-  const handleNext = (event: React.MouseEvent<HTMLInputElement>) => {
+  const handleNext = (
+    event: React.MouseEvent<HTMLInputElement> | undefined = undefined,
+  ) => {
     handleNav(1);
   };
 
-  const handleUp = (event: React.MouseEvent<HTMLInputElement>) => {
+  const handleUp = (
+    event: React.MouseEvent<HTMLInputElement> | undefined = undefined,
+  ) => {
     if (zoom != 0) setZoom(zoom - 1);
   };
 
-  const handleDown = (event: React.MouseEvent<HTMLInputElement>) => {
+  const handleDown = (
+    event: React.MouseEvent<HTMLInputElement> | undefined = undefined,
+  ) => {
     if (zoom != entry.stack.length - 1) setZoom(zoom + 1);
   };
 
-  const handleKeyPress = (event: React.MouseEvent<HTMLInputElement>) => {
+  const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key == ".") {
       if (index < trace.entries.length - 1) {
         setIndex(index + 1);
