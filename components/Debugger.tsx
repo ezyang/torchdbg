@@ -55,6 +55,8 @@ export default function Home() {
 
   const [file, setFile] = useState<string>(sample);
   const [isLoading, setIsLoading] = useState(false);
+  const [search, setSearch] = useState("");
+  const [searchFailed, setSearchFailed] = useState(false);
 
   const handleSelectChange = async (
     e: React.ChangeEvent<HTMLSelectElement>,
@@ -210,24 +212,75 @@ export default function Home() {
   };
 
   const handleKeyPress = (event: React.MouseEvent<HTMLInputElement>) => {
-    if (event.key == "h") {
-      handlePrev();
-    } else if (event.key == "l") {
-      handleNext();
-    } else if (event.key == "L") {
-      handleNav(1, true);
-    } else if (event.key == "j") {
-      handleDown();
-    } else if (event.key == "J") {
-      handleNav(-1, true);
+    if (event.key == ".") {
+      if (index < trace.entries.length - 1) {
+        setIndex(index + 1);
+        setZoom(trace.entries[index + 1].stack.length - 1);
+      }
+    } else if (event.key == "u") {
+      if (index >= 1) {
+        setIndex(index - 1);
+        setZoom(trace.entries[index - 1].stack.length - 1);
+      }
     } else if (event.key == "k") {
+      handlePrev();
+    } else if (event.key == "j") {
+      handleNext();
+    } else if (event.key == "l") {
+      handleDown();
+    } else if (event.key == "h") {
       handleUp();
-    } else if (event.key == "+") {
-      setIndex(index + 1);
-      setZoom(Math.min(trace.entries[index + 1].stack.length - 1), zoom);
-    } else if (event.key == "-") {
-      setIndex(index - 1);
-      setZoom(Math.min(trace.entries[index - 1].stack.length - 1), zoom);
+    }
+  };
+
+  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(event.target.value);
+  };
+
+  const handleSearchKeyPress = (
+    event: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (event.key == "Enter") {
+      doSearch();
+    }
+  };
+
+  const handleSearchClick = (event: React.MouseEvent<HTMLInputElement>) => {
+    doSearch();
+  };
+
+  const doSearch = () => {
+    let filename, lineNumber;
+
+    if (search.includes(":")) {
+      [filename, lineNumber] = search.split(":");
+      lineNumber = parseInt(lineNumber, 10);
+    } else {
+      filename = search;
+      lineNumber = -1;
+    }
+    let done = false;
+    let i, j;
+    for (let i_offset = 1; i_offset < trace.entries.length; i_offset++) {
+      const i = (index + i_offset) % trace.entries.length;
+      const next_entry = trace.entries[i];
+      for (let j = 0; j < next_entry.stack.length; j++) {
+        const frame = next_entry.stack[j];
+        if (
+          trace.strtable[frame.filename].includes(filename) &&
+          (lineNumber == -1 || frame.line == lineNumber)
+        ) {
+          setZoom(j);
+          setIndex(i);
+          setSearchFailed(false);
+          done = true;
+          break;
+        }
+      }
+      if (done) break;
+    }
+    if (!done) {
+      setSearchFailed(true);
     }
   };
 
@@ -423,7 +476,32 @@ export default function Home() {
           <input type="submit" value="Next" onClick={handleNext} />
           <input type="submit" value="Up" onClick={handleUp} />
           <input type="submit" value="Down" onClick={handleDown} />
-          <input type="text" value="" onKeyPress={handleKeyPress} />
+        </div>
+        <div>
+          Search:{" "}
+          <input
+            type="text"
+            value={search}
+            onChange={handleSearch}
+            onKeyPress={handleSearchKeyPress}
+            className={searchFailed ? "bg-red-200" : "bg-white"}
+          />
+          <input
+            type="submit"
+            value="Search"
+            onClick={handleSearchClick}
+            className="space-x-1 bg-blue-500 hover:bg-blue-700 text-white p-1"
+          />
+        </div>
+        <div>
+          Click to enable keyboard controls:{" "}
+          <input
+            type="text"
+            value=""
+            onKeyPress={handleKeyPress}
+            className="w-6 bg-blue-500"
+          />{" "}
+          (./u to step/back, j/k to next/prev in frame, h/l to adjust zoom)
         </div>
       </div>
       <div className="flex-item flex-grow flex flex-row pt-2">
