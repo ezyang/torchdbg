@@ -21,7 +21,11 @@ from collections import defaultdict
 
 
 uninteresting_dirs = (
-    os.path.join(os.path.dirname(__file__), ''),
+    *(
+        (os.path.join(os.path.dirname(__file__), ''),)
+        if '__file__' in globals()
+        else ()
+    ),
     os.path.join(os.path.dirname(inspect.getfile(torch)), ''),
 )
 
@@ -54,7 +58,7 @@ def dump_source(filename: str):
     trace_structured(
         "dump_source",
         metadata_fn=lambda: {"filename": intern_string(filename)},
-        payload_fn=lambda: open(filename, 'r').read()
+        payload_fn=lambda: open(filename, 'r').read() if os.path.exists(filename) else ""
     )
 
 
